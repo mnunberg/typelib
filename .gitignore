@@ -1,0 +1,7 @@
+gtest-1.7.0
+*.so
+*.o
+*.dll
+*.exe
+*.a
+build
