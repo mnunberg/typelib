@@ -17,6 +17,7 @@
 
 #include <typelib/compat.h>
 #include <gtest/gtest.h>
+#include <string>
 
 class String : public ::testing::Test
 {
@@ -73,4 +74,15 @@ TEST_F(String, testAdvance)
     ASSERT_EQ(5, str.nused);
     ASSERT_EQ(0, strcmp(str.base, "Hello"));
     lcb_string_release(&str);
+}
+
+TEST_F(String, testFormat)
+{
+    int rv;
+    tl_STRING str;
+    ASSERT_EQ(0, tl_str_init(&str));
+    std::string s(65536, '*');
+    rv = tl_str_appendf(&str, "%s-%s-%s", s.c_str(), s.c_str(), s.c_str());
+    ASSERT_EQ(0, rv);
+    tl_str_cleanup(&str);
 }

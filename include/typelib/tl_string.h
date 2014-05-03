@@ -19,6 +19,7 @@
 #define LCB_STRING_H
 
 #include <stddef.h>
+#include <stdarg.h>
 
 /**
  * Simple string type.
@@ -93,6 +94,17 @@ int tl_str_append(tl_STRING *str, const void *data, size_t size);
 int tl_str_appendz(tl_STRING *str, const char *zstr);
 
 /**
+ * Appends to the string using printf-style formatting
+ * @param str
+ * @param fmt The format to use
+ * @param ... format arguments
+ * @return 0 if successful, -1 on error
+ */
+int tl_str_appendf(tl_STRING *str, const char *fmt, ...);
+
+int tl_str_appendv(tl_STRING *str, const char *fmt, va_list ap);
+
+/**
  * Removes bytes from the end of the string. The resultant string will be
  * NUL-terminated
  * @param str the string to operate on
@@ -122,6 +134,9 @@ void tl_str_erase_end(tl_STRING *str, size_t to_remove);
 void tl_str_transfer(tl_STRING *from, tl_STRING *to);
 
 #define tl_str_tail(str) ((str)->base + (str)->nused)
+
+/** Utility function */
+int tl_asprintf(char **strp, const char *fmt, ...);
 
 #ifdef __cplusplus
 }
