@@ -168,9 +168,11 @@ fmt_resize_msc(tl_STRING *str, int rv, int sz)
 #if __STDC_VERSION__ >= 199901L || __GNUC__
 #define fmt_resize(str, rv, sz) fmt_resize_c99(str, rv, sz)
 #define TLVACOPY(dst, src) va_copy(dst, src)
-#else
+#elif defined(_MSC_VER)
 #define fmt_resize(str, rv, sz) fmt_resize_msc(str, rv, sz)
 #define TLVACOPY(dst, src) dst = src
+#else
+#error "GCC, Visual Studio, or a C99-conformant library required for vsnprintf"
 #endif
 
 #define FMT_RESIZE(str, rv, sz) do { \
