@@ -16,8 +16,9 @@
  */
 
 #include <stdlib.h>
-#include "hashset.h"
 #include <assert.h>
+#include "tl_nset.h"
+
 static const unsigned int prime_1 = 73;
 static const unsigned int prime_2 = 5009;
 

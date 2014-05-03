@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <typelib/compat.h>
-#include <typelib/sllist-inl.h>
+#include <typelib/tl_slist-inl.h>
 #include <list>
 #include <stdexcept>
 

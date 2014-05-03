@@ -13,11 +13,11 @@
 extern "C" {
 #endif
 
-#include "genhash.h"
-#include "list.h"
-#include "sllist.h"
-#include "hashset.h"
-#include "simplestring.h"
+#include "tl_hashtable.h"
+#include "tl_dlist.h"
+#include "tl_slist.h"
+#include "tl_nset.h"
+#include "tl_string.h"
 
 #ifdef __cplusplus
 }

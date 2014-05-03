@@ -14,7 +14,8 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-#include "list.h"
+
+#include "tl_dlist.h"
 
 void tl_dlist_init(tl_DLIST *list)
 {
