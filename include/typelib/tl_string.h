@@ -133,10 +133,41 @@ void tl_str_erase_end(tl_STRING *str, size_t to_remove);
  */
 void tl_str_transfer(tl_STRING *from, tl_STRING *to);
 
+/**
+ * Substitute all occurrences of 'orig' with 'repl'
+ * @param str
+ * @param orig string to search for
+ * @param repl replacement string
+ * @return 0 on success, -1 on allocation failure
+ */
+int tl_str_substz(tl_STRING *str, const char *orig, const char *repl);
+
+/**
+ * String substitution
+ * @param str
+ * @param orig String to search for
+ * @param norig Size of string (-1 if NUL-terminated)
+ * @param repl Replacement string
+ * @param nrepl Size of replacement (-1 if NUL terminated)
+ * @return 0 on success, -1 on allocation failure.
+ */
+int tl_str_subst(tl_STRING *str, const char *orig, int norig,
+                 const char *repl, int nrepl);
+
+/**
+ * Split a string into multiple components
+ * @param str The string to split
+ * @param delim The delimiter
+ * @param[out] components pointer to be set to a list of components
+ * @return 0 on success, nonzero on failure.
+ */
+int tl_str_split(tl_STRING *str, const char *delim, char ***components);
+
 #define tl_str_tail(str) ((str)->base + (str)->nused)
 
 /** Utility function */
 int tl_asprintf(char **strp, const char *fmt, ...);
+char *tl_strndup(const char *s, unsigned n);
 
 #ifdef __cplusplus
 }

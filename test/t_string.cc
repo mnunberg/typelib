@@ -86,3 +86,55 @@ TEST_F(String, testFormat)
     ASSERT_EQ(0, rv);
     tl_str_cleanup(&str);
 }
+
+TEST_F(String, testReplace)
+{
+    int rv;
+    tl_STRING str;
+    tl_str_init(&str);
+    tl_str_appendz(&str, "foofoofoo");
+    rv = tl_str_substz(&str, "foo", "bar");
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ(str.base, "barbarbar");
+    tl_str_cleanup(&str);
+
+    // test with no match
+    tl_str_init(&str);
+    tl_str_appendz(&str, "nonmatching");
+    rv = tl_str_substz(&str, "foo", "bar");
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ("nonmatching", str.base);
+    tl_str_cleanup(&str);
+
+    // test with empty replacement?
+    tl_str_init(&str);
+    tl_str_appendz(&str, "foofoofoo");
+    rv = tl_str_substz(&str, "foo", "");
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ("", str.base);
+    tl_str_cleanup(&str);
+
+    // test with empty search pattern
+    tl_str_init(&str);
+    tl_str_appendz(&str, "foofoofoo");
+    rv = tl_str_substz(&str, "", "bar");
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ("foofoofoo", str.base);
+    tl_str_cleanup(&str);
+
+    // test to remove test
+    tl_str_init(&str);
+    tl_str_appendz(&str, "~~REMOVEME~~");
+    rv = tl_str_substz(&str, "REMOVEME", "");
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ(str.base, "~~~~");
+    ASSERT_EQ(4, str.nused);
+    tl_str_cleanup(&str);
+
+    // test remove on empty string
+    tl_str_init(&str);
+    rv = tl_str_substz(&str, "nonexist", "");
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, str.nused);
+    tl_str_cleanup(&str);
+}

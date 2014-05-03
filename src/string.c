@@ -54,7 +54,7 @@ int tl_str_reserve(tl_STRING *str, size_t size)
         return -1;
     }
 
-    if (str->nalloc - str->nused >= size) {
+    if (TLSTR_AVAIL(str) >= size) {
         return 0;
     }
 
@@ -165,10 +165,12 @@ fmt_resize_msc(tl_STRING *str, int rv, int sz)
     return 1;
 }
 
-#if __STDC_VERSION__ >= 199901L
-#define fmt_resize(str, rv, sz) fmt_resize_c89(str, rv, sz)
+#if __STDC_VERSION__ >= 199901L || __GNUC__
+#define fmt_resize(str, rv, sz) fmt_resize_c99(str, rv, sz)
+#define TLVACOPY(dst, src) va_copy(dst, src)
 #else
 #define fmt_resize(str, rv, sz) fmt_resize_msc(str, rv, sz)
+#define TLVACOPY(dst, src) dst = src
 #endif
 
 #define FMT_RESIZE(str, rv, sz) do { \
@@ -182,7 +184,7 @@ int tl_str_appendv(tl_STRING *str, const char *fmt, va_list ap)
     do {
         int rv;
         va_list cap;
-        va_copy(cap, ap);
+        TLVACOPY(cap, ap);
         sz = TLSTR_AVAIL(str);
         rv = vsnprintf(str->base + str->nused, sz, fmt, cap);
         va_end(cap);
@@ -227,4 +229,94 @@ int tl_asprintf(char **strp, const char *fmt, ...)
 
     *strp = str.base;
     return str.nused;
+}
+
+char *tl_strndup(const char *a, unsigned na)
+{
+    char *ret = malloc(na+1);
+    if (!ret) {
+        return NULL;
+    }
+    memcpy(ret, a, na);
+    ret[na] = '\0';
+    return ret;
+}
+
+int tl_str_subst(tl_STRING *str, const char *orig, int norig,
+                 const char *repl, int nrepl)
+{
+    char *alloc_a = NULL, *alloc_b = NULL, *tmp, *last;
+    tl_STRING tmpstr;
+    int rv = -1;
+
+    if (!str->nused) {
+        return 0;
+    }
+
+    tl_str_init(&tmpstr);
+
+    if (norig != -1) {
+        if (!(alloc_a = tl_strndup(orig, norig))) {
+            goto GT_DONE;
+        }
+        orig = alloc_a;
+    } else {
+        norig = strlen(orig);
+    }
+
+    if (nrepl != -1) {
+        if (!(alloc_b = tl_strndup(repl, nrepl))) {
+            goto GT_DONE;
+        }
+        repl = alloc_b;
+    } else {
+        nrepl = strlen(repl);
+    }
+
+    if (norig == 0) {
+        rv = 0;
+        goto GT_DONE;
+    }
+
+    last = tmp = str->base;
+    while ((tmp = strstr(tmp, orig))) {
+        if (tl_str_append(&tmpstr, last, tmp-last)) {
+            goto GT_DONE;
+        }
+
+        if (tl_str_append(&tmpstr, repl, nrepl)) {
+            goto GT_DONE;
+        }
+        tmp += norig;
+        last = tmp;
+    }
+
+    if (tmp) {
+        /* no replacement needed */
+        rv = 0;
+        goto GT_DONE;
+    }
+
+    /* append the remainder */
+    if (tl_str_append(&tmpstr, last, tl_str_tail(str) - last)) {
+        goto GT_DONE;
+    }
+
+    tl_str_cleanup(str);
+    *str = tmpstr;
+    tmpstr.base = 0;
+    tmpstr.nalloc = 0;
+    tmpstr.nused = 0;
+    rv = 0;
+
+    GT_DONE:
+    free(alloc_a);
+    free(alloc_b);
+    tl_str_cleanup(&tmpstr);
+    return rv;
+}
+
+int tl_str_substz(tl_STRING *str, const char *orig, const char *repl)
+{
+    return tl_str_subst(str, orig, -1, repl, -1);
 }
