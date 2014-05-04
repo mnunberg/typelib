@@ -322,3 +322,119 @@ int tl_str_substz(tl_STRING *str, const char *orig, const char *repl)
 {
     return tl_str_subst(str, orig, -1, repl, -1);
 }
+
+typedef struct {
+    tl_STRLOC *locs;
+    int curix;
+    int nalloc;
+    int fixed;
+} loc_array;
+
+static int maybe_loc_expand(loc_array *arr)
+{
+    tl_STRLOC *tmploc;
+    if (arr->curix < arr->nalloc) {
+        return 0;
+    }
+    if (arr->fixed) {
+        return -1;
+    }
+    if (!arr->nalloc) {
+        arr->nalloc = 2;
+    } else {
+        arr->nalloc *= 2;
+    }
+    tmploc = realloc(arr->locs, arr->nalloc * sizeof(*arr->locs));
+    if (!tmploc) {
+        return -1;
+    }
+    arr->locs = tmploc;
+    return 0;
+}
+
+int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
+                int options)
+{
+    char *tmp, *last;
+    int dlen;
+    loc_array larr = { NULL };
+    tl_STRLOC *loc;
+
+
+    dlen = strlen(delim);
+
+    if (*unloc) {
+        larr.nalloc = *unloc;
+        larr.fixed = 1;
+        larr.locs = *uloc;
+    }
+
+    last = tmp = s;
+    while ((tmp = strstr(tmp, delim))) {
+        if (maybe_loc_expand(&larr)) {
+            if (!larr.fixed) {
+                free(larr.locs);
+            }
+            abort();
+            return -1;
+        }
+
+        loc = larr.locs + larr.curix;
+
+        loc->buf = last;
+        loc->length = tmp-last;
+        tmp += dlen;
+        last = tmp;
+        larr.curix++;
+    }
+
+    if (last == tmp) {
+        return 0;
+    }
+
+    if (maybe_loc_expand(&larr)) {
+        if (!larr.fixed) {
+            free(larr.locs);
+        }
+        return -1;
+    }
+
+    loc = larr.locs + larr.curix;
+    loc->length = strlen(last);
+    loc->buf = last;
+    larr.curix++;
+
+    *unloc = larr.curix;
+    if (!larr.fixed) {
+        *uloc = larr.locs;
+    }
+
+    if (options) {
+        int ii;
+
+        for (ii = 0; ii < *unloc; ii++) {
+            loc = larr.locs + ii;
+
+            if ((options & TL_STRSPLIT_ZREPLACE)) {
+                loc->buf[loc->length] = '\0';
+            }
+
+            if (options & TL_STRSPLIT_DETACH) {
+                char *tmpbuf = tl_strndup(loc->buf, loc->length);
+                if (!tmpbuf) {
+                    int jj;
+                    for (jj = 0; jj < ii; jj++) {
+                        free(larr.locs[ii].buf);
+                    }
+                    if (!larr.fixed) {
+                        free(larr.locs);
+                    }
+                    return -1;
+                }
+                loc->buf = tmpbuf;
+                loc->offset = 0;
+            }
+        }
+    }
+    return 0;
+}

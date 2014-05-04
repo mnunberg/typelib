@@ -138,3 +138,32 @@ TEST_F(String, testReplace)
     ASSERT_EQ(0, str.nused);
     tl_str_cleanup(&str);
 }
+
+TEST_F(String, testSplit)
+{
+    char s[] = "foo,bar,baz";
+    tl_STRLOC locs[3], *locp = locs;
+    int nloc = 3;
+    int rv;
+    rv = tl_strsplit(s, ",", &locp, &nloc, TL_STRSPLIT_ZREPLACE);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(3, nloc);
+
+    ASSERT_EQ(3, locs[0].length);
+    ASSERT_EQ(3, locs[1].length);
+    ASSERT_EQ(3, locs[2].length);
+
+    ASSERT_STREQ("foo", locs[0].buf);
+    ASSERT_STREQ("bar", locs[1].buf);
+    ASSERT_STREQ("baz", locs[2].buf);
+
+    // Test with standalone memory blocks
+    rv = tl_strsplit(s, ",", &locp, &nloc, TL_STRSPLIT_DETACH);
+    ASSERT_EQ(0, rv);
+    ASSERT_STREQ("foo", locs[0].buf);
+    ASSERT_STREQ("bar", locs[1].buf);
+    ASSERT_STREQ("baz", locs[2].buf);
+    for (int ii = 0; ii < nloc; ii++) {
+        free(locs[ii].buf);
+    }
+}

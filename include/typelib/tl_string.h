@@ -154,20 +154,35 @@ int tl_str_substz(tl_STRING *str, const char *orig, const char *repl);
 int tl_str_subst(tl_STRING *str, const char *orig, int norig,
                  const char *repl, int nrepl);
 
-/**
- * Split a string into multiple components
- * @param str The string to split
- * @param delim The delimiter
- * @param[out] components pointer to be set to a list of components
- * @return 0 on success, nonzero on failure.
- */
-int tl_str_split(tl_STRING *str, const char *delim, char ***components);
-
 #define tl_str_tail(str) ((str)->base + (str)->nused)
 
-/** Utility function */
+/** Utility functions. These functions wrap existing functionality */
 int tl_asprintf(char **strp, const char *fmt, ...);
 char *tl_strndup(const char *s, unsigned n);
+
+/** Detach the pointer so that it points to standalone memory */
+#define TL_STRSPLIT_DETACH 1
+
+/** Replace the terminator with a NULL */
+#define TL_STRSPLIT_ZREPLACE 2
+
+
+
+typedef struct {
+    char *buf;
+    unsigned offset;
+    unsigned length;
+} tl_STRLOC;
+
+/**
+ * @param s
+ * @param delim
+ * @param uloc
+ * @param nloc
+ * @param options
+ * @return
+ */
+int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *nloc, int options);
 
 #ifdef __cplusplus
 }
