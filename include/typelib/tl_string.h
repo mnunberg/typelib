@@ -157,6 +157,13 @@ int tl_str_subst(tl_STRING *str, const char *orig, int norig,
 #define tl_str_tail(str) ((str)->base + (str)->nused)
 
 /** Utility functions. These functions wrap existing functionality */
+
+/**
+ * Functions like glibc's asprintf
+ * @param[out] strp
+ * @param fmt
+ * @return
+ */
 int tl_asprintf(char **strp, const char *fmt, ...);
 char *tl_strndup(const char *s, unsigned n);
 
@@ -166,23 +173,50 @@ char *tl_strndup(const char *s, unsigned n);
 /** Replace the terminator with a NULL */
 #define TL_STRSPLIT_ZREPLACE 2
 
-
-
+/** @brief Simple structure describing a string and its length */
 typedef struct {
-    char *buf;
-    unsigned offset;
-    unsigned length;
+    char *buf; /**< string*/
+    unsigned length; /**< length of string*/
 } tl_STRLOC;
 
 /**
- * @param s
- * @param delim
- * @param uloc
- * @param nloc
- * @param options
- * @return
+ * @brief Split a string based on delimiters.
+ *
+ * @param s The string to split
+ * @param delim The delimited to split on
+ * @param[in,out] loc Pointer to an array of tl_STRLOC objects
+ * @param[in,out] nloc Pointer to a size of the array
+ * @param options Options for string allocation/manipulation
+ * @return 0 on success, nonzero on failure.
+ *
+ * This function splits a string based on a single n-character token. The
+ * strings between the token are extracted and stored in the `uloc` array.
+ *
+ * If the `nloc` parameter on invocation is _not_ 0 then it is assumed that
+ * `loc` points to a user-allocated array and the underlying storage will
+ * not be modified. In this case if there are insufficient elements in the
+ * array the function will return `-1` and `*nloc` will be set to -1 to indicate
+ * that more elements are needed. Otherwise `*loc` will be dynamically allocated
+ * (using malloc()) to contain as many tl_STRLOC elements as required. If
+ * `*loc` is not allocated by the caller, it must be released with free() when
+ * done.
+ *
+ * If `options` is 0 then each element of `*loc` will be initialized so that
+ * tl_STRLOC::buf points to an offset into `s`. `s` will not be modified and
+ * thus tl_STRLOC::buf may not be `NUL`-terminated. If options is
+ * `TL_STRSPLIT_ZREPLACE` then each tl_STRLOC::buf pointer will be
+ * `NUL`-terminated (with each occurrence of `delim` having its first character
+ * set to `\0`. If options is `TL_STRSPLIT_DETACH` then each tl_STRLOC::buf will
+ * contain an individually allocated string (via malloc()) which will be
+ * `NUL`-terminated, and `s` will remain untouched. If `TL_STRSPLIT_DETACH` is
+ * specified then the caller must free each tl_STRLOC::buf pointer using free()
+ * when it is no longer required.
+ *
+ *
+ * In all cases, the current value of `nloc` will be considered to be valid and
+ * the valid contents of `loc` will not overrun `nloc`.
  */
-int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *nloc, int options);
+int tl_strsplit(char *s, const char *delim, tl_STRLOC **loc, int *nloc, int options);
 
 #ifdef __cplusplus
 }

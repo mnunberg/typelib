@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <stdarg.h>
 #include <stdio.h>
 
 #include "tl_string.h"
@@ -360,8 +358,12 @@ int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
     loc_array larr = { NULL };
     tl_STRLOC *loc;
 
-
     dlen = strlen(delim);
+
+    if (!dlen) {
+        *unloc = 0;
+        return 0;
+    }
 
     if (*unloc) {
         larr.nalloc = *unloc;
@@ -369,15 +371,20 @@ int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
         larr.locs = *uloc;
     }
 
+    *unloc = 0;
     last = tmp = s;
+
+    #define EXPAND_OR_BAIL() if (maybe_loc_expand(&larr)) { \
+        if (!larr.fixed) { \
+            free(larr.locs); \
+        } else { \
+            *unloc = -1; \
+        } \
+        return -1; \
+    }
+
     while ((tmp = strstr(tmp, delim))) {
-        if (maybe_loc_expand(&larr)) {
-            if (!larr.fixed) {
-                free(larr.locs);
-            }
-            abort();
-            return -1;
-        }
+        EXPAND_OR_BAIL();
 
         loc = larr.locs + larr.curix;
 
@@ -388,16 +395,11 @@ int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
         larr.curix++;
     }
 
-    if (last == tmp) {
+    if (last == s) {
         return 0;
     }
 
-    if (maybe_loc_expand(&larr)) {
-        if (!larr.fixed) {
-            free(larr.locs);
-        }
-        return -1;
-    }
+    EXPAND_OR_BAIL();
 
     loc = larr.locs + larr.curix;
     loc->length = strlen(last);
@@ -418,7 +420,6 @@ int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
             if ((options & TL_STRSPLIT_ZREPLACE)) {
                 loc->buf[loc->length] = '\0';
             }
-
             if (options & TL_STRSPLIT_DETACH) {
                 char *tmpbuf = tl_strndup(loc->buf, loc->length);
                 if (!tmpbuf) {
@@ -432,7 +433,6 @@ int tl_strsplit(char *s, const char *delim, tl_STRLOC **uloc, int *unloc,
                     return -1;
                 }
                 loc->buf = tmpbuf;
-                loc->offset = 0;
             }
         }
     }

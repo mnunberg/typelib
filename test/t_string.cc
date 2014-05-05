@@ -167,3 +167,76 @@ TEST_F(String, testSplit)
         free(locs[ii].buf);
     }
 }
+
+
+TEST_F(String, testSplitEmpty)
+{
+    char s[] = "foo,bar,baz";
+    int rv;
+    tl_STRLOC *locs;
+    int nloc = 0;
+    rv = tl_strsplit(s, "", &locs, &nloc, 0);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, nloc);
+
+    rv = tl_strsplit((char *)"", "blah", &locs, &nloc, 0);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, nloc);
+}
+
+TEST_F(String, testSplitMiss)
+{
+    char s[] = "foo,bar,baz";
+    int rv, nloc = 0;
+    tl_STRLOC *locs;
+    rv = tl_strsplit(s, "|", &locs, &nloc, 0);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, nloc);
+}
+
+TEST_F(String, testSplitEmptyResults)
+{
+    char s[] = ",,,,";
+    int rv, nloc = 0;
+    tl_STRLOC *locs;
+    rv = tl_strsplit(s, ",", &locs, &nloc, 0);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(5, nloc);
+    for (int ii = 0; ii < nloc; ii++) {
+        ASSERT_EQ(0, locs[ii].length);
+    }
+    free(locs);
+
+    // try it again, but with detachable strings
+    nloc = 0;
+    rv = tl_strsplit(s, ",", &locs, &nloc, TL_STRSPLIT_DETACH);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(5, nloc);
+    for (int ii = 0; ii < nloc; ii++) {
+        ASSERT_EQ(0, locs[ii].length);
+        ASSERT_EQ('\0', locs[ii].buf[0]);
+        free(locs[ii].buf);
+    }
+    free(locs);
+
+    // try it again, but with nul-termination
+    nloc = 0;
+    rv = tl_strsplit(s, ",", &locs, &nloc, TL_STRSPLIT_ZREPLACE);
+    ASSERT_EQ(0, rv);
+    ASSERT_EQ(5, nloc);
+    for (int ii = 0; ii < nloc; ii++) {
+        ASSERT_EQ(0, locs[ii].length);
+        ASSERT_EQ('\0', locs[ii].buf[0]);
+    }
+    free(locs);
+}
+
+TEST_F(String, testSplitUserLoc)
+{
+    char s[] = "foo,bar,baz";
+    int rv, nloc = 2;
+    tl_STRLOC loc[3], *locp = loc;
+    rv = tl_strsplit(s, ",", &locp, &nloc, 0);
+    ASSERT_NE(0, rv);
+    ASSERT_EQ(-1, nloc);
+}
